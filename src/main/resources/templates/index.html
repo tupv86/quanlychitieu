@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/header :: head('Dashboard')}"></head>
+
+<body>
+
+    <div th:replace="~{fragments/header :: navbar}"></div>
+
+    <div class="container">
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <h2 class="fw-bold text-secondary mb-0">Tổng quan Tháng</h2>
+            </div>
+            <div class="col-md-6 mt-3 mt-md-0">
+                <form th:action="@{/}" method="get" class="d-flex justify-content-md-end align-items-center">
+                    <label class="me-2 fw-bold text-muted text-nowrap">Tra cứu:</label>
+                    <select name="month" class="form-select w-auto me-2" onchange="this.form.submit()">
+                        <option th:each="m : ${#numbers.sequence(1, 12)}" th:value="${m}" th:text="'Tháng ' + ${m}"
+                            th:selected="${m == selectedMonth}"></option>
+                    </select>
+                    <select name="year" class="form-select w-auto" onchange="this.form.submit()">
+                        <option th:each="y : ${#numbers.sequence(2020, 2030)}" th:value="${y}" th:text="'Năm ' + ${y}"
+                            th:selected="${y == selectedYear}"></option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-start border-success border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase fw-bold mb-2">Tổng Thu (Income)</h6>
+                                <h3 class="text-success mb-0"
+                                    th:text="${#numbers.formatDecimal(totalIncome, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫
+                                </h3>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success font-size-lg">
+                                <i class="bi bi-arrow-down-circle-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-start border-danger border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase fw-bold mb-2">Tổng Chi (Expense)</h6>
+                                <h3 class="text-danger mb-0"
+                                    th:text="${#numbers.formatDecimal(totalExpense, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫
+                                </h3>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger font-size-lg">
+                                <i class="bi bi-arrow-up-circle-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-start border-primary border-4 bg-primary bg-opacity-10">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase fw-bold mb-2">Số Dư (Balance)</h6>
+                                <h3 class="text-primary fw-bold mb-0"
+                                    th:text="${#numbers.formatDecimal(balance, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-25 p-3 rounded-circle text-primary font-size-lg">
+                                <i class="bi bi-piggy-bank-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Placeholder cho List Giao dịch -->
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="m-0 fw-bold">Lịch sử Giao dịch</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                    <i class="bi bi-plus-lg"></i> Thêm mới
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="ps-4">Ngày</th>
+                                <th scope="col">Mô tả</th>
+                                <th scope="col">Loại</th>
+                                <th scope="col" class="text-end">Số tiền</th>
+                                <th scope="col" class="text-center pe-4" style="width: 80px;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(transactions)}">
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    Không có giao dịch nào trong tháng này.
+                                </td>
+                            </tr>
+                            <tr th:each="t : ${transactions}">
+                                <td class="ps-4 align-middle" th:text="${#temporals.format(t.date, 'dd/MM/yyyy')}">
+                                    01/01/2026</td>
+                                <td class="align-middle" th:text="${t.description}">Mô tả khoản thu chi</td>
+                                <td class="align-middle">
+                                    <span th:if="${t.type.name() == 'INCOME'}"
+                                        class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">THU</span>
+                                    <span th:if="${t.type.name() == 'EXPENSE'}"
+                                        class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">CHI</span>
+                                </td>
+                                <td class="text-end align-middle fw-bold"
+                                    th:classappend="${t.type.name() == 'INCOME' ? 'text-success' : 'text-danger'}"
+                                    th:text="${(t.type.name() == 'INCOME' ? '+' : '-') + #numbers.formatDecimal(t.amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                                    100,000 ₫
+                                </td>
+                                <td class="text-center pe-4 align-middle">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <a th:href="@{/transaction/edit/{id}(id=${t.id})}"
+                                            class="btn btn-sm btn-outline-primary" title="Sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form th:action="@{/transaction/delete/{id}(id=${t.id})}" method="post"
+                                            onsubmit="return confirm('Bạn có chắc chắn muốn xóa giao dịch này không? Phát hiện xoá là không thể khôi phục!');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Thêm Giao Dịch Mới -->
+        <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addTransactionModalLabel">Thêm Giao Dịch Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <!-- Form binding với đối tượng newTransaction -->
+                    <form th:action="@{/transaction/add}" th:object="${newTransaction}" method="post">
+                        <div class="modal-body">
+                            <!-- Loại giao dịch (Radio) -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Loại Giao Dịch</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" th:field="*{type}" id="typeExpense"
+                                            value="EXPENSE" required>
+                                        <label class="form-check-label text-danger" for="typeExpense">Thiệt hại
+                                            (Chi)</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" th:field="*{type}" id="typeIncome"
+                                            value="INCOME">
+                                        <label class="form-check-label text-success" for="typeIncome">Bỏ vào
+                                            (Thu)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Số tiền -->
+                            <div class="mb-3">
+                                <label for="amountValue" class="form-label fw-bold">Số tiền (VNĐ)</label>
+                                <input type="number" class="form-control" id="amountValue" th:field="*{amount}"
+                                    min="1000" step="500" placeholder="VD: 50000" required>
+                            </div>
+
+                            <!-- Ngày giao dịch -->
+                            <div class="mb-3">
+                                <label for="dateValue" class="form-label fw-bold">Ngày thực hiện</label>
+                                <input type="date" class="form-control" id="dateValue" th:field="*{date}">
+                                <div class="form-text">Nếu để trống, sẽ tự động áp dụng ngày hôm nay.</div>
+                            </div>
+
+                            <!-- Ghi chú/Mô tả -->
+                            <div class="mb-3">
+                                <label for="descValue" class="form-label fw-bold">Mô tả tóm tắt</label>
+                                <input type="text" class="form-control" id="descValue" th:field="*{description}"
+                                    placeholder="VD: Ăn sáng tô bún riêu" maxlength="255" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Trở lại</button>
+                            <button type="submit" class="btn btn-primary">Lưu giao dịch</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+
+</html>
